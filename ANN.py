@@ -1,57 +1,71 @@
+import math
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
-from keras import Sequential
-from keras.layers import Dense
-
-dataset = pd.read_csv('faces.csv',header=0)
-
-# X & Y separation
-n = 25
-X = dataset.iloc[:,0:n]
-Y = dataset.iloc[:,709]
-
-# Scaling
-scale = StandardScaler()
-X = scale.fit_transform(X)
-
 from sklearn.model_selection import train_test_split
-x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size = 0.3, random_state = 20)
-
-m = x_train.shape[1]
-print(m)
-
-# ANN
-NN = Sequential()
-
-# first layer
-NN.add(Dense(100, activation='relu', kernel_initializer='random_normal', input_dim = m))
-# Second Layer
-NN.add(Dense(50, activation='relu', kernel_initializer='random_normal'))
-# Third Layer
-NN.add(Dense(10, activation='relu', kernel_initializer='random_normal'))
-#Output Layer
-NN.add(Dense(1, activation='sigmoid', kernel_initializer='random_normal'))
-
-# Compiling Neural Net
-NN.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-
-# Training
-NN.fit(x_train, y_train, batch_size=10, epochs=100)
-
-# loss value
-perf = NN.evaluate(x_train, y_train)
-loss = perf[0]
-accuracy = perf[1]
-print(loss)
-
-# Prediction Accuracy
-y_pred = NN.predict(x_test)
-y_pred = (y_pred>0.5)
-
 from sklearn.metrics import confusion_matrix
-cm = confusion_matrix(y_test, y_pred)
-total_pred = cm[0,0] + cm[1,1] + cm[0,1] + cm[1,0]
-pred_accu = ((cm[0,0] + cm[1,1])/total_pred)*100
-print(pred_accu)
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Dense
+
+
+class ANN:
+
+    def __init__(self, dataset_path):
+
+        self.dataset = pd.read_csv(dataset_path, header=0)
+
+        self.X = self.dataset.iloc[:, :25]
+        self.Y = self.dataset.iloc[:, 709]
+        self.X = StandardScaler().fit_transform(self.X)
+
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.X, self.Y, test_size=0.3,
+                                                                                random_state=20)
+
+        self.X = None
+        self.Y = None
+
+    def get_new_features(self, parent):
+        
+        par_x_train = np.empty([self.x_train.shape[0], 1])
+        par_x_test = np.empty([self.x_test.shape[0], 1])
+
+        for i, feature_bit in enumerate(parent):
+            if feature_bit == 1:
+                par_x_train = np.column_stack((par_x_train, self.x_train[:, i]))
+                par_x_test = np.column_stack((par_x_test, self.x_test[:, i]))
+
+        par_x_train = par_x_train[:, 1:]
+        par_x_test = par_x_test[:, 1:]
+
+        return par_x_train, par_x_test
+
+    def train_net(self, x_train, x_test):
+
+        NN = Sequential()
+        NN.add(Dense(10, activation='relu', kernel_initializer='random_normal', input_dim=x_train.shape[1]))
+        # Second Layer
+        NN.add(Dense(5, activation='relu', kernel_initializer='random_normal'))
+        # Third Layer
+        NN.add(Dense(3, activation='relu', kernel_initializer='random_normal'))
+        # Output Layer
+        NN.add(Dense(1, activation='sigmoid', kernel_initializer='random_normal'))
+
+        NN.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+        NN.fit(x_train, self.y_train, batch_size=10, epochs=10)
+
+        perf = NN.evaluate(x_test, self.y_test)
+        loss = perf[0]
+        loss = math.exp((-10*loss))
+
+        return loss
+
+    def get_fitness(self, population):
+        pop_fitness = []
+
+        for parent in population:
+            new_x_train, new_x_test = self.get_new_features(parent)
+            fitness = self.train_net(new_x_train, new_x_test)
+            pop_fitness.append(fitness)
+
+        return pop_fitness
