@@ -41,13 +41,14 @@ class ANN:
         return par_x_train, par_x_test
 
     def train_net(self, x_train, x_test):
-
+        m = x_train.shape[1]
+        
         NN = Sequential()
-        NN.add(Dense(10, activation='relu', kernel_initializer='random_normal', input_dim=x_train.shape[1]))
+        NN.add(Dense(max(m*2/3, 10), activation='relu', kernel_initializer='random_normal', input_dim=m))
         # Second Layer
-        NN.add(Dense(5, activation='relu', kernel_initializer='random_normal'))
+        NN.add(Dense(max(m/9, 5), activation='relu', kernel_initializer='random_normal'))
         # Third Layer
-        NN.add(Dense(3, activation='relu', kernel_initializer='random_normal'))
+        NN.add(Dense(max(m/27, 3), activation='relu', kernel_initializer='random_normal'))
         # Output Layer
         NN.add(Dense(1, activation='sigmoid', kernel_initializer='random_normal'))
 
