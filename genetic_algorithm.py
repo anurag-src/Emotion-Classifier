@@ -9,6 +9,7 @@ Original file is located at
 
 import random
 import numpy as np
+import pandas as pd
 from ANN import ANN
 import argparse
 
@@ -23,6 +24,8 @@ class GA:
         self.crossover_threshold = 5
         self.num_pop_size = num_pop_size
         self.population = np.empty([self.num_pop_size, self.num_features])
+        self.fitness = None
+        self.best_parents = []
 
     def generate_random(self):
         """
@@ -56,9 +59,6 @@ class GA:
 
         n = self.population.shape[0]
 
-        fitness = self.NeuralNet.get_fitness(self.population)
-        fitness = self.normalization(fitness)
-
         arr = np.empty(self.population.shape)
 
         i = 0
@@ -69,7 +69,7 @@ class GA:
         while i < n:
 
             tmp = random.randint(0, n - 1)
-            prob = [fitness[tmp], 1 - fitness[tmp]]
+            prob = [self.fitness[tmp], 1 - self.fitness[tmp]]
             choice = np.random.choice(temp, p=prob)
 
             if choice:
@@ -89,10 +89,10 @@ class GA:
         """
 
         n = len(fitness)
-        a = max(fitness)
+        n_sum = sum(fitness)
 
         for i in range(0, n):
-            fitness[i] = fitness[i] / a
+            fitness[i] = fitness[i] / n_sum
         return fitness
 
     def crossover(self, crossover_threshold):
@@ -176,12 +176,21 @@ class GA:
 
         self.population = parents
 
+    def store_best_parents(self):
+        df = pd.DataFrame(self.best_parents)
+        df.to_csv("best_parents.csv")
+
     def get_current_bestfit(self):
 
-        fitness = self.NeuralNet.get_fitness(self.population)
-        fitness = self.normalization(fitness)
+        self.fitness = self.NeuralNet.get_fitness(self.population)
+        self.fitness = self.normalization(self.fitness)
 
-        return max(fitness)
+        best_par = self.fitness.index(max(self.fitness))
+        num_best_par_features = sum(self.population[best_par])
+
+        self.best_parents.append(self.population[best_par])
+
+        return max(self.fitness), num_best_par_features
         
     def populate_onegen(self):
         
@@ -199,14 +208,28 @@ if __name__ == '__main__':
     num_generations = 10
 
     genAlg = GA(args["num_pop"], args["path_dataset"])
+    print("==== Creating initial population ====\n")
     genAlg.generate_random()
+    print("==== Training initial population ====\n")
+    genAlg.get_current_bestfit()
 
-    bestfits = [[]]
-    
+    num_features = []
+
     for _ in range(num_generations):
-        genAlg.populate_onegen()
-        curr_bestfit = genAlg.get_current_bestfit()
-        print(curr_bestfit)
-        bestfits.append(curr_bestfit)
 
-    #print(bestfits)
+        print("\n==== Training one generation of parents ====\n")
+
+        genAlg.populate_onegen()
+        curr_bestfit, best_num_features = genAlg.get_current_bestfit()
+        print("\nNumber of features in best parent: {}".format(best_num_features))
+        print("Normalised loss of best parent:    {}".format(curr_bestfit))
+
+        num_features.append(best_num_features)
+
+    print("\n==== Variation of best features across all generations ====")
+    print(*num_features)
+
+    genAlg.store_best_parents()
+
+
+

@@ -1,10 +1,13 @@
 import math
+import os
+
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import StandardScaler
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense
 
@@ -15,15 +18,14 @@ class ANN:
 
         self.dataset = pd.read_csv(dataset_path, header=0)
 
-        self.X = self.dataset.iloc[:, :25]
-        self.Y = self.dataset.iloc[:, 709]
+        self.X = self.dataset.iloc[:, :-1]
+        self.Y = self.dataset.iloc[:, -1]
         self.X = StandardScaler().fit_transform(self.X)
 
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.X, self.Y, test_size=0.3,
                                                                                 random_state=20)
 
-        self.X = None
-        self.Y = None
+
 
     def get_new_features(self, parent):
         
@@ -53,7 +55,7 @@ class ANN:
         NN.add(Dense(1, activation='sigmoid', kernel_initializer='random_normal'))
 
         NN.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-        NN.fit(x_train, self.y_train, batch_size=10, epochs=10)
+        NN.fit(x_train, self.y_train, batch_size=10, epochs=10, verbose=False)
 
         perf = NN.evaluate(x_test, self.y_test)
         loss = perf[0]
