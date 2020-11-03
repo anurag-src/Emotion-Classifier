@@ -44,11 +44,11 @@ class ANN:
         m = x_train.shape[1]
         
         NN = Sequential()
-        NN.add(Dense(m*2/3, activation='relu', kernel_initializer='random_normal', input_dim=m))
+        NN.add(Dense(max(m*2/3, 20), activation='relu', kernel_initializer='random_normal', input_dim=m))
         # Second Layer
-        NN.add(Dense(m/9, activation='relu', kernel_initializer='random_normal'))
+        NN.add(Dense(max(m/9, 10), activation='relu', kernel_initializer='random_normal'))
         # Third Layer
-        NN.add(Dense(m/27, activation='relu', kernel_initializer='random_normal'))
+        NN.add(Dense(max(m/27, 5), activation='relu', kernel_initializer='random_normal'))
         # Output Layer
         NN.add(Dense(1, activation='sigmoid', kernel_initializer='random_normal'))
 
