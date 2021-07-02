@@ -1,5 +1,4 @@
 # Emotion Classifier
-## Assignment-1 CS F469 IR
 
 ### :busts_in_silhouette: The Team
 * Sriram Kodey
